@@ -14,9 +14,9 @@ async def on_message(message):
     if message.author == client.user:
         return
     
-    # TODO: Encapsulate
+    # TODO: Put in another function
     # MURA RESPONDER
-    curseVocab = ["TANGINA","GAGO","PAKYU"]
+    curseVocab = ["TANGINA","GAGO","PAKYU","BWISET"]
     response = ""
     for word in curseVocab:
         if message.content.upper().find(word) != -1:
