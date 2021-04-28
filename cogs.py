@@ -1,3 +1,4 @@
+import discord
 from discord.ext import commands
 
 class MainCog(commands.Cog):
@@ -35,11 +36,14 @@ class Responses(commands.Cog):
         grat_vocab = {"THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"}
         
         for word in grat_vocab:
-            if message.content.upper().find(word) != -1 and message.content.find(str(self.bot.user.id)) != -1:
-                print(f"Detected thanks from {message.author}")
-                response = f"np bro {message.author.mention}"
-                await message.channel.send(response)
-                break
+            # check if message was replying to bot or mentions bot
+            if message.reference is not None and message.reference.cached_message.author == self.bot.user \
+                or self.bot.user.id in message.raw_mentions:
+                if message.content.upper().find(word) != -1:
+                    print(f"Detected thanks from {message.author}")
+                    response = f"np bro {message.author.mention}"
+                    await message.channel.send(response)
+                    break
 
     @commands.Cog.listener()
     async def on_message(self, message):
