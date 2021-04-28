@@ -4,6 +4,7 @@ import discord
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 client = discord.Client()
+botUsername = "HK-69#6411"
 
 @client.event
 async def on_ready():
@@ -24,5 +25,12 @@ async def on_message(message):
     if response != "":
         response = f"{response}ka rin {message.author.mention}!!"
         await message.channel.send(response)
+    
+    # NP BRO RESPONDER
+    thanksVocab = ["THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"]
+    for word in thanksVocab:
+        if message.content.upper().find(word) != -1 and message.content.find(botUsername) != -1:
+            response = f"np bro {message.author.mention}"
+            await message.channel.send(response)
 
 client.run(TOKEN)
