@@ -4,7 +4,6 @@ import discord
 TOKEN = os.getenv('DISCORD_TOKEN')
 
 client = discord.Client()
-botID = "758598428225306654"
 
 @client.event
 async def on_ready():
@@ -32,7 +31,7 @@ async def on_message(message):
     thanksVocab = ["THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"]
 
     for word in thanksVocab:
-        if message.content.upper().find(word) != -1 and message.content.find(botID) != -1:
+        if message.content.upper().find(word) != -1 and message.content.find(client.user.id) != -1:
             print(f"Detected thanks from {message.author}")
             response = f"np bro {message.author.mention}"
             await message.channel.send(response)
