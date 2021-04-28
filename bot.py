@@ -1,28 +1,9 @@
 import os
 import discord
 
+from discord.ext import commands
+
 TOKEN = os.getenv('DISCORD_TOKEN')
-
-client = discord.Client()
-
-@client.event
-async def on_ready():
-    print(f"{client.user} has connected to Discord!")
-
-@client.event
-async def on_message(message):
-    if message.author == client.user:
-        return
-    
-    # TODO: Put in another function
-    # MURA RESPONDER
-    curseVocab = ["TANGINA","GAGO","PAKYU","BWISET"]
-    response = ""
-    for word in curseVocab:
-        if message.content.upper().find(word) != -1:
-            response += (word.lower() + " ")
-    if response != "":
-        response = f"{response}ka rin {message.author.mention}!!"
-        await message.channel.send(response)
-
-client.run(TOKEN)
+bot = commands.Bot("")
+bot.load_extension("cogs")
+bot.run(TOKEN)
