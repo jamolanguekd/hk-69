@@ -21,16 +21,20 @@ async def on_message(message):
     response = ""
     for word in curseVocab:
         if message.content.upper().find(word) != -1:
+            print(f"Detected curse word from {message.author}")
             response += (word.lower() + " ")
     if response != "":
         response = f"{response}ka rin {message.author.mention}!!"
         await message.channel.send(response)
+        
     
     # NP BRO RESPONDER
     thanksVocab = ["THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"]
     for word in thanksVocab:
         if message.content.upper().find(word) != -1 and message.content.find(botID) != -1:
+            print(f"Detected thanks from {message.author}")
             response = f"np bro {message.author.mention}"
             await message.channel.send(response)
+            
 
 client.run(TOKEN)
