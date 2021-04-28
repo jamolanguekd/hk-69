@@ -28,9 +28,11 @@ async def on_message(message):
     
     # NP BRO RESPONDER
     thanksVocab = ["THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"]
+
     for word in thanksVocab:
         if message.content.upper().find(word) != -1 and message.content.find(botID) != -1:
             response = f"np bro {message.author.mention}"
             await message.channel.send(response)
+            break
 
 client.run(TOKEN)
