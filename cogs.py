@@ -12,6 +12,8 @@ class MainCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
+        if(hasattr(ctx.command, 'on_error')):
+            return
         if isinstance(error, commands.errors.CommandNotFound):
             return
         raise error
@@ -37,7 +39,11 @@ class Polls(commands.Cog):
     @commands.command()
     # TODO: limit poll options and handle exceptions!
     async def poll(self, ctx, *args):
-        print(f"Poll was created by {ctx.message.author}!")
+        
+        # limit
+        OPTION_LIMIT = 10
+        if(len(args) - 1 > OPTION_LIMIT):
+            raise commands.TooManyArguments
 
         # create and send embedded message
         message = self.create_poll_embed(ctx, args)
@@ -47,7 +53,16 @@ class Polls(commands.Cog):
         emojis = ctx.guild.emojis
         for i in range(1, len(args)):
             await pollmsg.add_reaction(emojis[i-1])
-    
+        
+        print(f"Poll was created by {ctx.message.author}!")
+
+    @poll.error
+    async def poll_error(self, ctx, error):
+        if isinstance(error, commands.TooManyArguments):
+            msg = discord.Embed()
+            msg.title = ":x: POLL ERROR"
+            msg.description = "Dami mong options di naman ako bayad! :angry:"
+            await ctx.send(embed = msg)
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
