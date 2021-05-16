@@ -35,6 +35,7 @@ class Polls(commands.Cog):
         return embed_msg
 
     @commands.command()
+    # TODO: limit poll options and handle exceptions!
     async def poll(self, ctx, *args):
         print(f"Poll was created by {ctx.message.author}!")
 
