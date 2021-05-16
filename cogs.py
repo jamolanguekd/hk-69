@@ -11,6 +11,12 @@ class MainCog(commands.Cog):
         print(f"{self.bot.user} has connected to Discord with ID: {self.bot.user.id}!")
         self.bot.command_prefix = f"<@!{self.bot.user.id}> "
 
+    @commands.Cog.listener()
+    async def on_command_error(self, ctx, error):
+        if isinstance(error, commands.errors.CommandNotFound):
+            return
+        raise error
+
 class Polls(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
