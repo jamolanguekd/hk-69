@@ -9,7 +9,17 @@ class MainCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.bot.user} has connected to Discord with ID: {self.bot.user.id}!")
-        self.bot.command_prefix = f"<@!{self.bot.user.id}>"
+        self.bot.command_prefix = f"<@!{self.bot.user.id}> "
+
+class Polls(commands.Cog):
+    def __init__ (self, bot):
+        self.bot = bot
+        self._last_member = None
+
+    @commands.command()
+    async def poll(self, ctx, *args):
+        print("test")
+        await ctx.send(f"You have created a poll with {len(args)} parameters")
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
@@ -45,8 +55,8 @@ class Responses(commands.Cog):
                     await message.channel.send(response)
                     break
 
-    @commands.Cog.listener()
-    async def on_message(self, message):
+    @commands.Cog.listener("on_message")
+    async def process_message(self, message):
         print(f"Message detected: '{message.content}'")
         if message.author == self.bot.user:
             return
@@ -56,3 +66,4 @@ class Responses(commands.Cog):
 def setup(bot):
     bot.add_cog(MainCog(bot))
     bot.add_cog(Responses(bot))
+    bot.add_cog(Polls(bot))
