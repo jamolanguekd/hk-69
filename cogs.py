@@ -4,7 +4,6 @@ from discord.ext import commands
 class MainCog(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
-        self._last_member = None
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -21,11 +20,23 @@ class Polls(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
         self._last_member = None
+    
+    def create_poll_embed(self, ctx, contents):
+        embed_msg = discord.Embed()
+        embed_msg.title = contents[0]
+        embed_msg.description = ""
+        emojis = ctx.guild.emojis
+        for i in range(1, len(contents)):
+            embed_msg.description += f"{emojis[i-1]} - {contents[i]}\n"
+        return embed_msg
 
     @commands.command()
     async def poll(self, ctx, *args):
-        print("test")
-        await ctx.send(f"You have created a poll with {len(args)} parameters")
+        print(f"Poll was created by {ctx.message.author}!")
+        await ctx.send(f"You have created a poll with {len(args)} parameters: {str(args)}")
+        message = self.create_poll_embed(ctx, args)
+        await ctx.send(embed=message)
+    
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
