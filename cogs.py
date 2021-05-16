@@ -26,7 +26,6 @@ class Responses(commands.Cog):
         self.bot = bot
         self._last_member = None
     
-    @commands.command()
     async def detect_curses(self, message):
         # TODO: Create separate text file for curse_vocab
         curse_vocab = {"TANGINA","GAGO","PAKYU","BWISET"}
@@ -40,7 +39,6 @@ class Responses(commands.Cog):
             response = f"{response}ka rin {message.author.mention}!!"
             await message.channel.send(response)
     
-    @commands.command()
     async def detect_gratitude(self, message):
         # TODO: Create separate text file for grat_vocab
         grat_vocab = {"THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"}
