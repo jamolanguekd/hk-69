@@ -24,6 +24,10 @@ class Polls(commands.Cog):
     def create_poll_embed(self, ctx, contents):
         embed_msg = discord.Embed()
         embed_msg.title = contents[0]
+        embed_msg.set_footer(text=f"requested by {ctx.message.author}")
+        embed_msg.timestamp = ctx.message.created_at
+        embed_msg.color = 0x800000
+        # generate poll options
         embed_msg.description = ""
         emojis = ctx.guild.emojis
         for i in range(1, len(contents)):
@@ -33,9 +37,15 @@ class Polls(commands.Cog):
     @commands.command()
     async def poll(self, ctx, *args):
         print(f"Poll was created by {ctx.message.author}!")
-        await ctx.send(f"You have created a poll with {len(args)} parameters: {str(args)}")
+
+        # create and send embedded message
         message = self.create_poll_embed(ctx, args)
-        await ctx.send(embed=message)
+        pollmsg = await ctx.send(embed=message)
+
+        # react to embedded message
+        emojis = ctx.guild.emojis
+        for i in range(1, len(args)):
+            await pollmsg.add_reaction(emojis[i-1])
     
 
 class Responses(commands.Cog):
