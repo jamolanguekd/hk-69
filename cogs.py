@@ -37,7 +37,6 @@ class Polls(commands.Cog):
         return embed_msg
 
     @commands.command()
-    # TODO: limit poll options and handle exceptions!
     async def poll(self, ctx, *args):
         
         # limit
@@ -99,10 +98,15 @@ class Responses(commands.Cog):
     @commands.Cog.listener("on_message")
     async def process_message(self, message):
         print(f"Message detected: '{message.content}'")
-        if message.author == self.bot.user:
+        # Check if command was invoked
+        ctx = await self.bot.get_context(message)
+        if(ctx.valid):
             return
-        await self.detect_curses(message)
-        await self.detect_gratitude(message)
+        else:
+            if message.author == self.bot.user:
+                return
+            await self.detect_curses(message)
+            await self.detect_gratitude(message)
 
 def setup(bot):
     bot.add_cog(MainCog(bot))
