@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.ext.commands import errors
 
 class MainCog(commands.Cog):
     def __init__ (self, bot):
@@ -12,10 +13,14 @@ class MainCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
-        if(hasattr(ctx.command, 'on_error')):
+        if hasattr(ctx.command, 'on_error'):
             return
-        if isinstance(error, commands.errors.CommandNotFound):
-            return
+        
+        msg = discord.Embed()
+        msg.title = ":x: COMMAND FAILED!"
+        msg.description = "Sorry di ko keri huhu =(( *sinuntok ang pader*"
+        await ctx.send(embed = msg)
+        
         raise error
 
 class Polls(commands.Cog):
@@ -38,11 +43,13 @@ class Polls(commands.Cog):
 
     @commands.command()
     async def poll(self, ctx, *args):
-        
         # limit
         OPTION_LIMIT = 10
         if(len(args) - 1 > OPTION_LIMIT):
             raise commands.TooManyArguments
+        
+        if(len(args) - 1 < 2):
+            raise commands.UserInputError
 
         # create and send embedded message
         message = self.create_poll_embed(ctx, args)
@@ -57,11 +64,20 @@ class Polls(commands.Cog):
 
     @poll.error
     async def poll_error(self, ctx, error):
+        print(str(error))
         if isinstance(error, commands.TooManyArguments):
+            print("ERROR: Poll has too many arguments!")
             msg = discord.Embed()
             msg.title = ":x: POLL ERROR"
             msg.description = "Dami mong options di naman ako bayad! :angry:"
             await ctx.send(embed = msg)
+        if isinstance(error, commands.UserInputError):
+            print("ERROR: Poll has too little arguments!")
+            msg = discord.Embed()
+            msg.title = ":x: POLL ERROR"
+            msg.description = "Magpapapoll pero walang options???? :woozy_face:"
+            await ctx.send(embed = msg)
+            
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
