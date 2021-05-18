@@ -1,4 +1,4 @@
 discord.py
 python-dotenv
 pymongo
-'pymongo[srv]'
+pymongo[srv]
