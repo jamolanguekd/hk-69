@@ -1,6 +1,6 @@
 import discord
 from discord.ext import commands
-from discord.ext.commands import errors
+import random
 
 class MainCog(commands.Cog):
     def __init__ (self, bot):
@@ -43,7 +43,7 @@ class Polls(commands.Cog):
 
     @commands.command()
     async def poll(self, ctx, *args):
-        # limit
+        # error handling
         OPTION_LIMIT = 10
         if(len(args) - 1 > OPTION_LIMIT):
             raise commands.TooManyArguments
@@ -77,6 +77,25 @@ class Polls(commands.Cog):
             msg.title = ":x: POLL ERROR"
             msg.description = "Magpapapoll pero walang options???? :woozy_face:"
             await ctx.send(embed = msg)
+
+    @commands.command()
+    async def choose(self, ctx, *args):
+        # error handling
+        if(len(args) < 2):
+            raise commands.UserInputError
+        print("test")
+        msg = f"Hmmm... let's go with `{random.choice(args)}` nalang"
+        await ctx.message.reply(msg)
+
+        print(f"Requested to choose by {ctx.message.author}!")
+
+    @choose.error
+    async def choose_error(self, ctx, error):
+        if isinstance(error, commands.UserInputError):
+            print("Choosing from too little options!")
+            msg = "Wala namang choices..."
+            await ctx.message.reply(msg)
+    
             
 
 class Responses(commands.Cog):
