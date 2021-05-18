@@ -81,10 +81,11 @@ class Polls(commands.Cog):
     @commands.command()
     async def choose(self, ctx, *args):
         # error handling
-        if(len(args) < 2):
+        choices = list(set(args))
+        if(len(choices) < 2):
             raise commands.UserInputError
         print("test")
-        msg = f"Hmmm... let's go with `{random.choice(args)}` nalang"
+        msg = f"Hmmm... let's go with `{random.choice(choices)}` nalang"
         await ctx.message.reply(msg)
 
         print(f"Requested to choose by {ctx.message.author}!")
