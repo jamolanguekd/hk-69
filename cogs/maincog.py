@@ -20,7 +20,6 @@ class MainCog(commands.Cog):
         msg.title = ":x: COMMAND FAILED!"
         msg.description = "Sorry di ko keri huhu =(( *sinuntok ang pader*"
         await ctx.send(embed = msg)
-        
         raise error
 
 def setup(bot):
