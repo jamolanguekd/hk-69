@@ -1,16 +1,22 @@
 from discord.ext import commands
 
+def load_vocabulary(filename):
+    vocabulary = set()
+    with open(filename, 'r') as file:
+        for line in file:
+            vocabulary.add(line.strip())
+    return vocabulary
+
 class Responses(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
         self._last_member = None
+        self.curse_vocab = load_vocabulary("vocabulary/curses.txt")
+        self.grat_vocab = load_vocabulary("vocabulary/gratitude.txt")
     
     async def detect_curses(self, message):
-        # TODO: Create separate text file for curse_vocab
-        curse_vocab = {"TANGINA","GAGO","PAKYU","BWISET"}
         response = ""
-
-        for word in curse_vocab:
+        for word in self.curse_vocab:
             if message.content.upper().find(word) != -1:
                 print(f"Detected curse word from {message.author}")
                 response += (word.lower() + " ")
@@ -19,18 +25,25 @@ class Responses(commands.Cog):
             await message.channel.send(response)
     
     async def detect_gratitude(self, message):
-        # TODO: Create separate text file for grat_vocab
-        grat_vocab = {"THANKS", "THANK YOU", "SALAMAT", "LAMAT", "TY"}
-        
-        for word in grat_vocab:
-            # check if message was replying to bot or mentions bot
-            if message.reference is not None and message.reference.cached_message.author == self.bot.user \
-                or self.bot.user.id in message.raw_mentions:
+        for word in self.grat_vocab:
+            # check if message was replying to bot
+            if self.bot.user.id in message.raw_mentions:
                 if message.content.upper().find(word) != -1:
                     print(f"Detected thanks from {message.author}")
                     response = f"np bro {message.author.mention}"
                     await message.channel.send(response)
                     break
+            elif message.reference is not None:
+                if message.reference.cached_message is None:
+                    msgref = await message.channel.fetch_message(message.reference.message_id)
+                else:
+                    msgref = message.reference.cached_message
+                if(msgref.author == self.bot.user):
+                    print(f"Detected thanks from {message.author}")
+                    response = f"np bro {message.author.mention}"
+                    await message.channel.send(response)
+                    break  
+            
 
     @commands.Cog.listener("on_message")
     async def process_message(self, message):
