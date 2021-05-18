@@ -9,7 +9,7 @@ class MainCog(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.bot.user} has connected to Discord with ID: {self.bot.user.id}!")
-        self.bot.command_prefix = f"<@!{self.bot.user.id}> "
+        self.bot.command_prefix = [f"<@!{self.bot.user.id}> ",f"<@{self.bot.user.id}> "]
 
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):
