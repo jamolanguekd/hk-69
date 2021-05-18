@@ -5,5 +5,7 @@ from discord.ext import commands
 
 TOKEN = os.getenv('DISCORD_TOKEN')
 bot = commands.Bot("")
-bot.load_extension("cogs")
+cogs = ["maincog","polls","responses"]
+for cog in cogs:
+    bot.load_extension(f"cogs.{cog}")
 bot.run(TOKEN)
