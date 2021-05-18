@@ -1,5 +1,3 @@
-from os import X_OK
-from discord import message
 from discord.ext import commands
 import discord
 from datetime import datetime
@@ -32,14 +30,18 @@ class Responses(commands.Cog):
 
     def create_curse_embed(self, ctx, added, thrown):
         msg = discord.Embed()
-        msg.title = ":white_check_mark: CURSES ARE UPDATED!"
         msg.description = ""
         if len(added):
+            msg.title = ":white_check_mark: CURSES ARE UPDATED!"
             msg.description += f"The following words have been added:\n*{', '.join(added)}*\n"
+        else:
+            msg.title = ":warning: CURSES ARE RETAINED!"
         if len(thrown):
             if(len(added)):
                 msg.description += "\n"
             msg.description += f"The following words already exist:\n*{', '.join(thrown)}*\n"
+        msg.set_footer(text = f"updated by {ctx.message.author}")
+        msg.timestamp = datetime.utcnow()
         return msg
     
     @add.command()
