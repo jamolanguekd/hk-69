@@ -1,20 +1,36 @@
 from discord.ext import commands
 import discord
 from datetime import datetime
+import pymongo
+import os
 
-PATH_CURSE_VOCAB = "vocabulary/curses.txt"
-PATH_GRAT_VOCAB = "vocabulary/gratitude.txt"
+PATH_CURSE_VOCAB = "curse_vocab"
+PATH_GRAT_VOCAB = "grat_vocab"
+MONGO_TOKEN = os.getenv('MONGO_TOKEN')
+DB_NAME = 'hk69'
+COLL_VOCAB = 'vocabulary'
 
-def load_vocabulary(filename):
-    vocabulary = set()
-    with open(filename, 'r') as file:
-        for line in file:
-            vocabulary.add(line.strip())
-    return vocabulary
+def load_vocabulary(name):
+    with pymongo.MongoClient(MONGO_TOKEN) as client:
+        db = client.get_database(DB_NAME)
+        collection = db.get_collection(COLL_VOCAB)
+        vocabulary = collection.find_one({"name":name})['content']
+        return set(vocabulary)
 
-def update_vocabulary(filename, word):
-    with open(filename,'a') as file:
-            file.write(f"{word}\n")
+def update_vocabulary(name, words):
+    with pymongo.MongoClient(MONGO_TOKEN) as client:
+        db = client.get_database(DB_NAME)
+        collection = db.get_collection(COLL_VOCAB)
+        collection.update_one(
+            {"name":name}, 
+            {
+                "$push": {
+                    "content": { 
+                        "$each" : words
+                    }
+                }
+            }
+        )
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
@@ -46,20 +62,28 @@ class Responses(commands.Cog):
     
     @add.command()
     async def curse(self, ctx, *args):
+        # check limits
         if(len(args) < 1):
             raise commands.UserInputError
+
+        # filter new words
         added = []
         thrown = []
         for word in args:
             if word.upper() not in self.curse_vocab:
-                update_vocabulary(PATH_CURSE_VOCAB,word.upper())
                 added.append(word)
                 continue
             thrown.append(word)
-        self.curse_vocab = load_vocabulary(PATH_CURSE_VOCAB)
-            
+        
+        # update database and reload vocabulary
+        if len(added):
+            update_vocabulary(PATH_CURSE_VOCAB, [word.upper() for word in added])
+            self.curse_vocab = load_vocabulary(PATH_CURSE_VOCAB)
+        
+        # display success message
         msg = self.create_curse_embed(ctx, added, thrown)
         await ctx.send(embed = msg)
+        print("Curse vocabulary was successfully updated!")
 
     async def detect_curses(self, msg):
         response = ""
