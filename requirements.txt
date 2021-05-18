@@ -2,3 +2,5 @@ discord.py
 python-dotenv
 pymongo
 pymongo[srv]
+dnspython
+pymongo-srv
