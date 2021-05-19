@@ -110,10 +110,11 @@ class Responses(commands.Cog):
                 else:
                     msgref = msg.reference.cached_message
                 if(msgref.author == self.bot.user):
-                    print(f"Detected thanks from {msg.author}")
-                    response = f"np bro {msg.author.mention}"
-                    await msg.channel.send(response)
-                    break  
+                    if msg.content.upper().find(word) != -1:
+                        print(f"Detected thanks from {msg.author}")
+                        response = f"np bro {msg.author.mention}"
+                        await msg.channel.send(response)
+                        break  
             
     @commands.Cog.listener("on_message")
     async def process_message(self, msg):
