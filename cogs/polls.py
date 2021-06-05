@@ -35,7 +35,8 @@ class Polls(commands.Cog):
         pollmsg = await ctx.send(embed=message)
 
         # react to embedded message
-        emojis = ctx.guild.emojis
+        #emojis = ctx.guild.emojis
+        emojis += (":one:",":two:",":three:",":four:",":five:",":six:",":seven:",":eight:",":nine:",":ten:")
         for i in range(1, len(args)):
             await pollmsg.add_reaction(emojis[i-1])
         
