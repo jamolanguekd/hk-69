@@ -19,7 +19,8 @@ class Polls(commands.Cog):
         embed_msg.description = ""
         emojis = ctx.guild.emojis + GLOBAL_DEFAULT_EMOJIS
         for i in range(1, len(contents)):
-            embed_msg.description += f"{emojis[i-1]} - {contents[i]}\n"
+            embed_msg.description += f"{emojis[i-1]} - {contents[i]}\n\n"
+        embed_msg.rstrip()
         return embed_msg
 
     @commands.command()
