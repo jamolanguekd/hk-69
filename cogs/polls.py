@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands
 import random
 
+GLOBAL_DEFAULT_EMOJIS = ("1️⃣","2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣","9️⃣","🔟")
+
 class Polls(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
@@ -15,7 +17,7 @@ class Polls(commands.Cog):
         embed_msg.color = 0x800000
         # generate poll options
         embed_msg.description = ""
-        emojis = ctx.guild.emojis
+        emojis = ctx.guild.emojis + GLOBAL_DEFAULT_EMOJIS
         for i in range(1, len(contents)):
             embed_msg.description += f"{emojis[i-1]} - {contents[i]}\n"
         return embed_msg
@@ -35,8 +37,8 @@ class Polls(commands.Cog):
         pollmsg = await ctx.send(embed=message)
 
         # react to embedded message
-        #emojis = ctx.guild.emojis
-        emojis += (":one:",":two:",":three:",":four:",":five:",":six:",":seven:",":eight:",":nine:",":ten:")
+        emojis = ctx.guild.emojis + GLOBAL_DEFAULT_EMOJIS
+        print(emojis)
         for i in range(1, len(args)):
             await pollmsg.add_reaction(emojis[i-1])
         
