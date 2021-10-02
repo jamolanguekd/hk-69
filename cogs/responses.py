@@ -118,7 +118,7 @@ class Responses(commands.Cog):
             
     @commands.Cog.listener("on_message")
     async def process_message(self, msg):
-        print(f"Message detected: '{msg.content}'")
+        #print(f"Message detected: '{msg.content}'")
         # Check if command was invoked
         ctx = await self.bot.get_context(msg)
         if(ctx.valid):
