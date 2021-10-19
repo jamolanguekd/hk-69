@@ -89,7 +89,7 @@ class Responses(commands.Cog):
         msg.description = ""
         msg.title = f"{type.upper()} WORDS"
         if(global_list):
-            msg.description += f"Global {type.lower()} words:\n*{', '.join(global_list)}*\n"
+            msg.description += f":skull: Global {type.lower()} words:\n*{', '.join(global_list)}*\n"
         if(server_list):
             if(global_list):
                 msg.description += "\n"
