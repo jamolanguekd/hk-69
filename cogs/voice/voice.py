@@ -19,7 +19,7 @@ class Voice(commands.Cog):
     @music.command()
     async def play(self, ctx, *, arg):
         loop = self.bot.loop or asyncio.get_running_loop()
-        stream_data = await loop.run_in_executor(None, youtube_helper.get_stream_data(arg))
+        stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(arg))
         stream_url = stream_data['url']
         stream_title = stream_data['title']
         stream_duration = seconds_to_dhm(stream_data['duration'])
