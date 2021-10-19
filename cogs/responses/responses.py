@@ -1,6 +1,6 @@
 from discord.ext import commands
 import discord
-from datetime import datetime
+import helpers.date_time_helper as date_time_helper
 import pymongo
 import os
 
@@ -96,7 +96,7 @@ class Responses(commands.Cog):
                 msg.description += "\n"
             msg.description += f"Server {type.lower()} words:\n*{', '.join(server_list)}*\n"
         msg.set_footer(text = f"requested by {ctx.message.author}")
-        msg.timestamp = datetime.utcnow()
+        msg.timestamp = date_time_helper.get_current_timestamp()
         return msg
 
     @show.command(name="curse")
@@ -127,7 +127,7 @@ class Responses(commands.Cog):
                 msg.description += "\n"
             msg.description += f"The following words already exist:\n*{', '.join(thrown)}*\n"
         msg.set_footer(text = f"updated by {ctx.message.author}")
-        msg.timestamp = datetime.utcnow()
+        msg.timestamp = date_time_helper.get_current_timestamp()
         return msg
     
     @add.command(name="curse")
@@ -175,7 +175,7 @@ class Responses(commands.Cog):
                 msg.description += "\n"
             msg.description += f"The following words cannot be removed:\n*{', '.join(thrown)}*\n"
         msg.set_footer(text = f"updated by {ctx.message.author}")
-        msg.timestamp = datetime.utcnow()
+        msg.timestamp = date_time_helper.get_current_timestamp()
         return msg
         
     @remove.command(name="curse")
