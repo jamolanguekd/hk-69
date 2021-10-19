@@ -16,6 +16,13 @@ class MainCog(commands.Cog):
             return
         if isinstance(error, commands.CommandNotFound):
             return
+        if isinstance(error, commands.MissingPermissions):
+            msg = discord.Embed()
+            msg.title = ":x: COMMAND FAILED!"
+            msg.description = "Admin ka ghorl?"
+            await ctx.send(embed = msg)
+            return
+            
         msg = discord.Embed()
         msg.title = ":x: COMMAND FAILED!"
         msg.description = "Sorry di ko keri huhu =(( *sinuntok ang pader*"

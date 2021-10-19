@@ -11,6 +11,7 @@ PATH_GRAT_VOCAB = "grat_vocab"
 MONGO_TOKEN = os.getenv('MONGO_TOKEN')
 DB_NAME = 'hk69'
 COLL_VOCAB = 'vocabulary'
+GLOBAL_ID = 'global'
 
 def parse_document(document):
     temp = {}
@@ -21,13 +22,15 @@ def parse_document(document):
         temp[server_id].add(item["word"])
     return temp
 
+def get_global_vocabulary(vocabulary):
+    return vocabulary[GLOBAL_ID]
+
 def get_server_vocabulary(vocabulary, msg):
-    global_vocabulary = vocabulary['global']
     if(msg.guild):
         server_vocabulary = vocabulary.get(str(msg.guild.id))
         if(server_vocabulary):
-            return global_vocabulary.union(vocabulary.get(str(msg.guild.id)))
-    return global_vocabulary
+            return vocabulary.get(str(msg.guild.id))
+    return set()
 
 def load_vocabulary(name):
     with pymongo.MongoClient(MONGO_TOKEN) as client:
@@ -37,20 +40,37 @@ def load_vocabulary(name):
         vocabulary = parse_document(document)
         return vocabulary
 
-def update_vocabulary(name, words):
-    with pymongo.MongoClient(MONGO_TOKEN) as client:
-        db = client.get_database(DB_NAME)
-        collection = db.get_collection(COLL_VOCAB)
-        collection.update_one(
-            {"name":name}, 
-            {
-                "$push": {
-                    "content": { 
-                        "$each" : words
-                    }
+def update_vocabulary(name, server_id, words, add=True):
+    processed_words = [{"server_id": f"{server_id}", "word": word.upper()} for word in words]
+
+    if(add):
+        with pymongo.MongoClient(MONGO_TOKEN) as client:
+            db = client.get_database(DB_NAME)
+            collection = db.get_collection(COLL_VOCAB)
+            collection.update_one(
+                {"name":name}, 
+                {
+                    "$push": {
+                        "content": { 
+                            "$each" : processed_words
+                        }
+                    }   
                 }
-            }
-        )
+            )
+    else:
+        with pymongo.MongoClient(MONGO_TOKEN) as client:
+            db = client.get_database(DB_NAME)
+            collection = db.get_collection(COLL_VOCAB)
+            collection.update_one(
+                {"name":name}, 
+                {
+                    "$pull": {
+                        "content": { 
+                            "$in" : processed_words
+                        }
+                    }   
+                }
+            )
 
 class Responses(commands.Cog):
     def __init__ (self, bot):
@@ -64,7 +84,7 @@ class Responses(commands.Cog):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
 
-    def create_curse_embed(self, ctx, added, thrown):
+    def create_add_curse_embed(self, ctx, added, thrown):
         msg = discord.Embed()
         msg.description = ""
         if len(added):
@@ -80,8 +100,9 @@ class Responses(commands.Cog):
         msg.timestamp = datetime.utcnow()
         return msg
     
-    @add.command()
-    async def curse(self, ctx, *args):
+    @add.command(name="curse")
+    @commands.has_permissions(administrator=True)
+    async def add_curse(self, ctx, *args):
         # check limits
         if(len(args) < 1):
             raise commands.UserInputError
@@ -89,25 +110,75 @@ class Responses(commands.Cog):
         # filter new words
         added = []
         thrown = []
+        checklist = get_global_vocabulary(self.curse_vocab).union(get_server_vocabulary(self.curse_vocab, ctx))
         for word in args:
-            if word.upper() not in self.curse_vocab:
+            if word.upper() not in checklist:
                 added.append(word)
                 continue
             thrown.append(word)
         
         # update database and reload vocabulary
-        if len(added):
-            update_vocabulary(PATH_CURSE_VOCAB, [word.upper() for word in added])
+        if (added):
+            update_vocabulary(PATH_CURSE_VOCAB, ctx.guild.id, added)
             self.curse_vocab = load_vocabulary(PATH_CURSE_VOCAB)
         
         # display success message
-        msg = self.create_curse_embed(ctx, added, thrown)
+        msg = self.create_add_curse_embed(ctx, added, thrown)
+        await ctx.send(embed = msg)
+        print("Curse vocabulary was successfully updated!")
+
+    @commands.group()
+    async def remove(self, ctx):
+        if not ctx.invoked_subcommand:
+            raise commands.CommandInvokeError
+
+    def create_remove_curse_embed(self, ctx, removed, thrown):
+        msg = discord.Embed()
+        msg.description = ""
+        if len(removed):
+            msg.title = ":white_check_mark: CURSES ARE UPDATED!"
+            msg.description += f"The following words have been removed:\n*{', '.join(removed)}*\n"
+        else:
+            msg.title = ":warning: CANNOT BE REMOVED!"
+        if len(thrown):
+            if(len(removed)):
+                msg.description += "\n"
+            msg.description += f"The following words cannot be removed:\n*{', '.join(thrown)}*\n"
+        msg.set_footer(text = f"updated by {ctx.message.author}")
+        msg.timestamp = datetime.utcnow()
+        return msg
+        
+    @remove.command(name="curse")
+    @commands.has_permissions(administrator=True)
+    async def remove_curse(self, ctx, *args):
+        # check limits
+        if(len(args) < 1):
+            raise commands.UserInputError
+
+        # filter existing words words
+        removed = []
+        thrown = []
+        server_vocab = get_server_vocabulary(self.curse_vocab, ctx)
+        global_vocab = get_global_vocabulary(self.curse_vocab)
+        for word in args:
+            if word.upper() in server_vocab and word.upper() not in global_vocab:
+                removed.append(word)
+                continue
+            thrown.append(word)
+        
+        # update database and reload vocabulary
+        if removed:
+            update_vocabulary(PATH_CURSE_VOCAB, ctx.guild.id, removed, add=False)
+            self.curse_vocab = load_vocabulary(PATH_CURSE_VOCAB)
+        
+        # display success message
+        msg = self.create_remove_curse_embed(ctx, removed, thrown)
         await ctx.send(embed = msg)
         print("Curse vocabulary was successfully updated!")
 
     async def detect_curses(self, msg):
         response = ""
-        checklist = get_server_vocabulary(self.curse_vocab, msg)
+        checklist = get_global_vocabulary(self.curse_vocab).union(get_server_vocabulary(self.curse_vocab, msg))
         for word in checklist:
             if msg.content.upper().find(word) != -1:
                 print(f"Detected curse word from {msg.author}")
@@ -117,7 +188,7 @@ class Responses(commands.Cog):
             await msg.channel.send(response)
     
     async def detect_gratitude(self, msg):
-        checklist = get_server_vocabulary(self.grat_vocab, msg)
+        checklist = get_global_vocabulary(self.grat_vocab).union(get_server_vocabulary(self.grat_vocab, msg))
         for word in checklist:
             # check if message was replying to bot
             if self.bot.user.id in msg.raw_mentions:
