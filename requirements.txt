@@ -3,3 +3,4 @@ python-dotenv
 pymongo
 pymongo[srv]
 dnspython
+pynacl
