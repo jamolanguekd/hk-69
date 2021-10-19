@@ -4,18 +4,38 @@ from datetime import datetime
 import pymongo
 import os
 
+from pymongo import server
+
 PATH_CURSE_VOCAB = "curse_vocab"
 PATH_GRAT_VOCAB = "grat_vocab"
 MONGO_TOKEN = os.getenv('MONGO_TOKEN')
 DB_NAME = 'hk69'
 COLL_VOCAB = 'vocabulary'
 
+def parse_document(document):
+    temp = {}
+    for item in document:
+        server_id = item["server_id"]
+        if server_id not in temp:
+            temp[server_id] = set()
+        temp[server_id].add(item["word"])
+    return temp
+
+def get_server_vocabulary(vocabulary, msg):
+    global_vocabulary = vocabulary['global']
+    if(msg.guild):
+        server_vocabulary = vocabulary.get(str(msg.guild.id))
+        if(server_vocabulary):
+            return global_vocabulary.union(vocabulary.get(str(msg.guild.id)))
+    return global_vocabulary
+
 def load_vocabulary(name):
     with pymongo.MongoClient(MONGO_TOKEN) as client:
         db = client.get_database(DB_NAME)
         collection = db.get_collection(COLL_VOCAB)
-        vocabulary = collection.find_one({"name":name})['content']
-        return set(vocabulary)
+        document = collection.find_one({"name":name})['content']
+        vocabulary = parse_document(document)
+        return vocabulary
 
 def update_vocabulary(name, words):
     with pymongo.MongoClient(MONGO_TOKEN) as client:
@@ -87,7 +107,8 @@ class Responses(commands.Cog):
 
     async def detect_curses(self, msg):
         response = ""
-        for word in self.curse_vocab:
+        checklist = get_server_vocabulary(self.curse_vocab, msg)
+        for word in checklist:
             if msg.content.upper().find(word) != -1:
                 print(f"Detected curse word from {msg.author}")
                 response += (word.lower() + " ")
@@ -96,7 +117,8 @@ class Responses(commands.Cog):
             await msg.channel.send(response)
     
     async def detect_gratitude(self, msg):
-        for word in self.grat_vocab:
+        checklist = get_server_vocabulary(self.grat_vocab, msg)
+        for word in checklist:
             # check if message was replying to bot
             if self.bot.user.id in msg.raw_mentions:
                 if msg.content.upper().find(word) != -1:
