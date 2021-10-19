@@ -32,11 +32,18 @@ class Voice(commands.Cog):
 
     def create_playing_embed(self, ctx, title, duration):
         msg = discord.Embed()
-        msg.description = f":musical_note: Now Playing: **{title}** `[{duration}]`" 
+        msg.title = ":musical_note: Now Playing"
+        msg.description = f"**{title}** `[{duration}]`" 
         msg.set_footer(text = f"requested by {ctx.message.author}")
         msg.timestamp = ctx.message.created_at
         return msg 
 
+    @music.command()
+    async def stop(self, ctx):
+        voice_client = ctx.voice_client
+        if (ctx.voice_client):
+            voice_client.disconnect()
+    
     @play.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
