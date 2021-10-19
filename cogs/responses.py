@@ -80,11 +80,40 @@ class Responses(commands.Cog):
         self.grat_vocab = load_vocabulary(PATH_GRAT_VOCAB)
 
     @commands.group()
+    async def show(self, ctx):
+        if not ctx.invoked_subcommand:
+            raise commands.CommandInvokeError
+    
+    def create_show_embed(ctx, type, global_list, server_list):
+        msg = discord.Embed()
+        msg.description = ""
+        msg.title = f"{type.upper()} WORDS"
+        if(global_list):
+            msg.description += f"Global {type.lower()} words:\n*{', '.join(global_list)}*\n"
+        if(server_list):
+            if(global_list):
+                msg.description += "\n"
+            msg.description += f"Server {type.lower()} words:\n*{', '.join(server_list)}*\n"
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = datetime.utcnow()
+        return msg
+
+    @show.command(name="curse")
+    async def show_curse(self, ctx, *args):
+        global_vocabulary = get_global_vocabulary(self.curse_vocab)
+        server_vocabulary = get_server_vocabulary(self.curse_vocab, ctx.msg)
+
+        # display message
+        msg = self.create_show_embed(ctx, ctx.Command.name, global_vocabulary, server_vocabulary)
+        await ctx.send(embed = msg)
+        print("Curse vocabulary was successfully displayed!")
+
+    @commands.group()
     async def add(self, ctx):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
 
-    def create_add_curse_embed(self, ctx, added, thrown):
+    def create_add_curse_embed(ctx, added, thrown):
         msg = discord.Embed()
         msg.description = ""
         if len(added):
