@@ -14,7 +14,7 @@ class Music(commands.Cog):
     
     @music.command()
     async def play(self, ctx):
-        voice_state = ctx.author.voice.channel
+        voice_state = ctx.author.voice
 
         if voice_state is None:
             msg = "Wala ka naman sa VC"
