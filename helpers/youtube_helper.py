@@ -18,6 +18,9 @@ YTDL_OPTS = {
     'source_address': '0.0.0.0' # bind to ipv4 since ipv6 addresses cause issues sometimes
 }
 
+FFMPEG_OPTIONS = {
+    'options': '-vn'
+}
 
 # returns URL of first video match
 def search_first(keywords):
@@ -33,4 +36,3 @@ def get_stream_data(url):
         video = result['entries'][0]
 
     return video
-

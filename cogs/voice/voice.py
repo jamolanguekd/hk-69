@@ -25,7 +25,7 @@ class Voice(commands.Cog):
         stream_duration = seconds_to_dhm(stream_data['duration'])
 
         voice_client = ctx.voice_client
-        voice_client.play(discord.FFmpegPCMAudio(stream_url), after = lambda e : None)
+        voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e : None)
 
         msg = self.create_playing_embed(ctx, stream_title, stream_duration)
         await ctx.send(embed = msg)
