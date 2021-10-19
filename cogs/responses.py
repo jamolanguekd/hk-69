@@ -101,7 +101,7 @@ class Responses(commands.Cog):
     @show.command(name="curse")
     async def show_curse(self, ctx, *args):
         global_vocabulary = get_global_vocabulary(self.curse_vocab)
-        server_vocabulary = get_server_vocabulary(self.curse_vocab, ctx.msg)
+        server_vocabulary = get_server_vocabulary(self.curse_vocab, ctx.message)
 
         # display message
         msg = self.create_show_embed(ctx, ctx.Command.name, global_vocabulary, server_vocabulary)
