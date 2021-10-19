@@ -17,8 +17,7 @@ class Voice(commands.Cog):
             raise commands.CommandInvokeError
     
     @music.command()
-    async def play(self, ctx, *, arg):
-        print(arg)
+    async def play(self, ctx, *, arg=None):
         # Voice client should always be present!
         voice_client = ctx.voice_client
 
@@ -30,8 +29,7 @@ class Voice(commands.Cog):
             None
         
         elif voice_client.is_paused():
-            if arg is None:
-                voice_client.resume()
+            voice_client.resume()
             #If arg exists
                 # add to queue
                 # play current song
