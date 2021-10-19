@@ -18,6 +18,7 @@ class Voice(commands.Cog):
     
     @music.command()
     async def play(self, ctx, *, arg):
+        print(arg)
         # Voice client should always be present!
         voice_client = ctx.voice_client
 
@@ -29,7 +30,7 @@ class Voice(commands.Cog):
             None
         
         elif voice_client.is_paused():
-            if not arg:
+            if arg is None:
                 voice_client.resume()
             #If arg exists
                 # add to queue
@@ -66,7 +67,7 @@ class Voice(commands.Cog):
     async def stop(self, ctx):
         voice_client = ctx.voice_client
         if (ctx.voice_client):
-            voice_client.disconnect()
+            voice_client.stop()
     
     @play.before_invoke
     async def ensure_voice(self, ctx):
