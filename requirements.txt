@@ -5,3 +5,4 @@ pymongo[srv]
 dnspython
 pynacl
 youtube-dl==2021.2.10
+youtube-search
