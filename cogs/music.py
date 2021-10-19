@@ -21,5 +21,5 @@ class Music(commands.Cog):
         else:
             await voice_channel.connect()
 
-    def setup(bot):
-        bot.add_cog(Music(bot))
+def setup(bot):
+    bot.add_cog(Music(bot))
