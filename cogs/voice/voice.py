@@ -37,7 +37,7 @@ class Voice(commands.Cog):
         msg.timestamp = ctx.message.created_at
         return msg 
 
-    @play.before_invoke()
+    @play.before_invoke
     async def ensure_voice(self, ctx):
         if ctx.voice_client is None:
             if ctx.author.voice:
