@@ -84,7 +84,7 @@ class Responses(commands.Cog):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
     
-    def create_show_embed(ctx, type, global_list, server_list):
+    def create_show_embed(self, ctx, type, global_list, server_list):
         msg = discord.Embed()
         msg.description = ""
         msg.title = f"{type.upper()} WORDS"
@@ -113,7 +113,7 @@ class Responses(commands.Cog):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
 
-    def create_add_curse_embed(ctx, added, thrown):
+    def create_add_curse_embed(self, ctx, added, thrown):
         msg = discord.Embed()
         msg.description = ""
         if len(added):
