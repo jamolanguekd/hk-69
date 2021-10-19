@@ -14,12 +14,13 @@ class Music(commands.Cog):
     
     @music.command()
     async def play(self, ctx):
-        voice_channel = ctx.author.voice.channel
-        if ctx.author.voice.channel is None:
+        voice_state = ctx.author.voice.channel
+
+        if voice_state is None:
             msg = "Wala ka naman sa VC"
             await ctx.message.reply(msg)
-        else:
-            await voice_channel.connect()
+        elif voice_state.channel is not None:
+            await voice_state.channel.connect()
 
 def setup(bot):
     bot.add_cog(Music(bot))
