@@ -87,9 +87,9 @@ class Responses(commands.Cog):
     def create_show_embed(self, ctx, type, global_list, server_list):
         msg = discord.Embed()
         msg.description = ""
-        msg.title = f"{type.upper()} WORDS"
+        msg.title = f":skull: {type.upper()} WORDS"
         if(global_list):
-            msg.description += f":skull: Global {type.lower()} words:\n*{', '.join(global_list)}*\n"
+            msg.description += f"Global {type.lower()} words:\n*{', '.join(global_list)}*\n"
         if(server_list):
             if(global_list):
                 msg.description += "\n"
