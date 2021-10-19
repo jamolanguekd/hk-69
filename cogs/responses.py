@@ -81,6 +81,7 @@ class Responses(commands.Cog):
 
     @commands.group()
     async def show(self, ctx):
+        #TODO: display subcommand options
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
     
