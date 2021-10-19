@@ -104,7 +104,7 @@ class Responses(commands.Cog):
         server_vocabulary = get_server_vocabulary(self.curse_vocab, ctx.message)
 
         # display message
-        msg = self.create_show_embed(ctx, ctx.Command.name, global_vocabulary, server_vocabulary)
+        msg = self.create_show_embed(ctx, ctx.command.name, global_vocabulary, server_vocabulary)
         await ctx.send(embed = msg)
         print("Curse vocabulary was successfully displayed!")
 
