@@ -11,6 +11,7 @@ class Voice(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
         self._last_member = None
+        self.current_stream_data = None
 
     @commands.group()
     async def music(self, ctx):
@@ -24,32 +25,33 @@ class Voice(commands.Cog):
         voice_client = ctx.voice_client
 
         if voice_client.is_playing():
-            # Check channel
-                # If command channel is different from vc channel, display error
-                # Else, add to queue
             # Add to queue
             None
         
         elif voice_client.is_paused():
-            voice_client.resume()
-            #If arg exists
+            if arg is None:
+                voice_client.resume()
+            else:
+                None
                 # add to queue
-                # play current song
-        
         else:
-            loop = self.bot.loop or asyncio.get_running_loop()
-            stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(arg))
-            stream_url = stream_data['url']
-            stream_title = stream_data['title']
-            stream_duration = seconds_to_dhm(stream_data['duration'])
+            # TODO
+            # insert new song after current
+            # end current song
 
-            
+            loop = self.bot.loop or asyncio.get_running_loop()
+            self.current_stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(arg))
+            stream_url = self.current_stream_data['url']
+
             voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e : None)
 
-            msg = self.create_playing_embed(ctx, stream_title, stream_duration)
+            msg = self.create_playing_embed(ctx)
             await ctx.send(embed = msg)
 
-    def create_playing_embed(self, ctx, title, duration):
+    def create_playing_embed(self, ctx):
+        title = self.current_stream_data['title']
+        duration = seconds_to_dhm(self.current_stream_data['duration'])
+
         msg = discord.Embed()
         msg.title = ":musical_note: Now Playing"
         msg.description = f"**{title}** `[{duration}]`" 
@@ -60,14 +62,36 @@ class Voice(commands.Cog):
     @music.command()
     async def pause(self, ctx):
         voice_client = ctx.voice_client
-        if(voice_client and voice_client.is_playing()):
+        if voice_client and voice_client.is_playing():
             voice_client.pause()
+            msg = self.create_pausing_embed(ctx)
+            await ctx.send(embed = msg)
+
+    def create_pausing_embed(self, ctx):
+        title = self.current_stream_data['title']
+
+        msg = discord.Embed()
+        msg.title = ":pause_button: Paused"
+        msg.description = f"**{title}**" 
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
     
     @music.command()
     async def stop(self, ctx):
         voice_client = ctx.voice_client
-        if (ctx.voice_client):
+        if voice_client:
             voice_client.stop()
+            msg = self.create_stopping_embed(ctx)
+            await ctx.send(embed = msg)
+
+    def create_stopping_embed(self, ctx):
+        msg = discord.Embed()
+        msg.title = ":stop_button: Stopped"
+        msg.description = "The player has been stopped."
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
     
     @play.before_invoke
     @stop.before_invoke
