@@ -6,3 +6,4 @@ dnspython
 pynacl
 youtube-dl
 youtube-search
+DiscordUtils
