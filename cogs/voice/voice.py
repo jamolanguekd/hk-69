@@ -35,6 +35,9 @@ class Voice(commands.Cog):
                 None
                 # add to queue
         else:
+            if arg is None:
+                raise commands.MissingRequiredArgument
+         
             # TODO
             # insert new song after current
             # end current song
@@ -62,10 +65,12 @@ class Voice(commands.Cog):
     @music.command()
     async def pause(self, ctx):
         voice_client = ctx.voice_client
-        if voice_client and voice_client.is_playing():
+        if voice_client.is_playing():
             voice_client.pause()
             msg = self.create_pausing_embed(ctx)
             await ctx.send(embed = msg)
+        elif voice_client.is_paused():
+            raise commands.CommandError(message = "AlreadyPaused")
 
     def create_pausing_embed(self, ctx):
         title = self.current_stream_data['title']
@@ -80,10 +85,11 @@ class Voice(commands.Cog):
     @music.command()
     async def stop(self, ctx):
         voice_client = ctx.voice_client
-        if voice_client:
-            voice_client.stop()
-            msg = self.create_stopping_embed(ctx)
-            await ctx.send(embed = msg)
+        if not voice_client.is_playing() and not voice_client.is_paused():
+            raise commands.CommandError(message = "AlreadyStopped")
+        voice_client.stop()
+        msg = self.create_stopping_embed(ctx)
+        await ctx.send(embed = msg)
 
     def create_stopping_embed(self, ctx):
         msg = discord.Embed()
@@ -109,7 +115,6 @@ class Voice(commands.Cog):
                 else:
                     raise commands.CommandError(message = "InvalidVoiceChannel")
 
-
     @play.error
     @stop.error
     @pause.error
@@ -122,12 +127,25 @@ class Voice(commands.Cog):
                 msg = "Wala ka naman sa VC..."
                 await ctx.reply(msg)
             elif error_message == "PlayerBusy":
-                print(f"ERROR: Bot is currently playing in another voice channel!")
+                print("ERROR: Bot is currently playing in another voice channel!")
                 msg = f"Busy pa ako. :( Wait ka nalang or sali ka nalang dito: <#{ctx.voice_client.channel.id}>..."
                 await ctx.reply(msg)
             elif error_message == "InvalidVoiceChannel":
-                print(f"ERROR: Bot is currently playing in another voice channel!")
-                msg = f"Sabotage ka ghorl? Nasa ibang VC ako..."
+                print("ERROR: Bot is currently playing in another voice channel!")
+                msg = "Sabotage ka ghorl? Nasa ibang VC ako..."
+                await ctx.reply(msg)
+            elif error_message == "AlreadyPaused":
+                print("ERROR: Bot has already paused audio")
+                msg = "Naka-pause na ako sis,,,"
+                await ctx.reply(msg)
+            elif error_message == "AlreadyStopped":
+                print("ERROR: Bot has already stopped audio")
+                msg = "Wala naman akong ginagawa :--/"
+                await ctx.reply(msg)
+        elif isinstance(error, commands.MissingRequiredArgument):
+            command = ctx.command.name
+            if command == 'play':
+                msg = "Anong i-pplay ko??? :weary:"
                 await ctx.reply(msg)
    
 def setup(bot):
