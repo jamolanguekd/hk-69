@@ -74,7 +74,7 @@ class Voice(commands.Cog):
         stringified_queue = self.stringify_queue_list(SONGS_PER_PAGE)
         if stringified_queue:
             for string in stringified_queue:
-                embed = self.create_queue_empty_embed(ctx, string)
+                embed = self.create_queue_page_embed(ctx, string)
                 embeds.append(embed)
         else:
             embed = self.create_queue_empty_embed(ctx)
