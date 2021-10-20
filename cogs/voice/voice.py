@@ -183,7 +183,7 @@ class Voice(commands.Cog):
     @music.command()
     async def stop(self, ctx):
         voice_client = ctx.voice_client
-        if not voice_client.is_playing() and not voice  _client.is_paused():
+        if not voice_client.is_playing() and not voice_client.is_paused():
             raise commands.CommandError(message = "AlreadyStopped")
         voice_client.stop()
         msg = self.create_stopping_embed(ctx)
