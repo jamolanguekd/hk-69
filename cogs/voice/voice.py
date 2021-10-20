@@ -1,17 +1,103 @@
 import discord
 import asyncio
-
-from discord import message
+import DiscordUtils
 import helpers.youtube_helper as youtube_helper
 from helpers.date_time_helper import seconds_to_dhm
 from discord.ext import commands
 
+PLAYLIST_EMBED_TITLE = ":musical_note: Playlist :musical_note:"
+SONGS_PER_PAGE = 5
 
 class Voice(commands.Cog):
     def __init__ (self, bot):
         self.bot = bot
         self._last_member = None
+        self.queue = []
+        self.current_index = -1
+        self.queue_length = 0
         self.current_stream_data = None
+
+    def stringify_queue_list(self, limit):
+        queue = self.queue
+        length = self.queue_length
+        if queue:
+            stringified_queue = []
+            start = 0
+            end = min(length, limit)
+            while(True):
+                temp = ""
+              
+                # Parse String Per Page
+                for index, item in enumerate(queue[start:end]):
+                    temp += f"{index+1}.) {item['title']} [{seconds_to_dhm(item['duration'])}]"
+                    if self.current_index == index:
+                        temp += "*<--- Current Track*"
+                    temp += "\n"
+
+                stringified_queue.append(temp)
+
+                # Adjust boundaries
+                start += limit
+                end += limit
+
+                # Break Condition
+                if start >= length:
+                    break
+            return stringified_queue
+        else:
+            return []
+    
+    def stringify_queue_length(self):
+        if self.queue_length:
+            return f"*{self.queue_length} tracks in the playlist.*"
+        else:
+            return "*The playlist is currently empty.*"
+
+    def create_queue_page_embed(self, ctx, song_list):
+        msg = discord.Embed()
+        msg.title = PLAYLIST_EMBED_TITLE
+        msg.description += song_list
+        msg.set_footer(text=f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+    
+    def create_queue_empty_embed(self, ctx):
+        msg = discord.Embed()
+        msg.title = PLAYLIST_EMBED_TITLE
+        msg.description = self.stringify_queue_length()
+        msg.set_footer(text=f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        
+        return msg
+
+    def create_queue_embeds(self, ctx):
+        embeds = []
+        stringified_queue = self.stringify_queue(SONGS_PER_PAGE)
+        if stringified_queue:
+            for string in stringified_queue:
+                embed = self.create_queue_empty_embed(ctx, string)
+                embeds.append(embed)
+        else:
+            embed = self.create_queue_empty_embed(ctx)
+            embeds.append(embed)
+        return embeds
+
+    async def show_queue(self, ctx):
+        embeds = self.create_queue_embeds(ctx)
+        paginator = DiscordUtils.Pagination.AutoEmbedPaginator(ctx)
+        paginator.run(embeds)
+
+    async def get_data(self, keyword):
+        loop = self.bot.loop or asyncio.get_running_loop()
+        self.current_stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(keyword))
+        stream_url = self.current_stream_data['url']
+
+    def enqueue(self, stream_data):
+        self.queue.append(stream_data)
+        self.queue_length += 1
+    
+    def insert(self, position, stream_data):
+        self.queue.insert(position, stream_data)
+        self.queue_length += 1
 
     @commands.group()
     async def music(self, ctx):
@@ -21,36 +107,35 @@ class Voice(commands.Cog):
     
     @music.command()
     async def play(self, ctx, *, arg=None):
+
         # Voice client should always be present!
         voice_client = ctx.voice_client
 
         if voice_client.is_playing():
-            # Add to queue
-            None
+            if arg:
+                await self.add(arg)
+            else:
+                raise commands.CommandError(message = "AlreadyPlaying")     
         
         elif voice_client.is_paused():
-            if arg is None:
-                voice_client.resume()
+            if arg:
+                await self.add(arg)
             else:
-                None
-                # add to queue
+                voice_client.resume()
         else:
             if arg is None:
                 raise commands.MissingRequiredArgument
          
-            # TODO
-            # insert new song after current
-            # end current song
+            await self.add(arg)
+            self.current_index = self.queue_length
 
-            loop = self.bot.loop or asyncio.get_running_loop()
-            self.current_stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(arg))
-            stream_url = self.current_stream_data['url']
-
+            stream_url = self.current_stream_data[self.current_index]['url']
             voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e : None)
 
-            msg = self.create_playing_embed(ctx)
-            await ctx.send(embed = msg)
-
+        #msg = self.create_playing_embed(ctx)
+        #await ctx.send(embed = msg)
+        await self.show_queue(ctx)
+ 
     def create_playing_embed(self, ctx):
         title = self.current_stream_data['title']
         duration = seconds_to_dhm(self.current_stream_data['duration'])
@@ -61,6 +146,19 @@ class Voice(commands.Cog):
         msg.set_footer(text = f"requested by {ctx.message.author}")
         msg.timestamp = ctx.message.created_at
         return msg 
+
+    @music.command()
+    async def add(self, ctx, *, args = None):
+        if args is None:
+            raise commands.MissingRequiredArgument
+        
+        # Add song to queue
+        new_stream_data = self.get_data(args)
+        self.enqueue(new_stream_data)
+
+        # Show queue
+        await self.show_queue(ctx)
+
 
     @music.command()
     async def pause(self, ctx):
@@ -144,7 +242,7 @@ class Voice(commands.Cog):
                 await ctx.reply(msg)
         elif isinstance(error, commands.MissingRequiredArgument):
             command = ctx.command.name
-            if command == 'play':
+            if command == "play" or command == "add":
                 msg = "Anong i-pplay ko??? :weary:"
                 await ctx.reply(msg)
    
