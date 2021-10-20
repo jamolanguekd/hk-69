@@ -110,7 +110,9 @@ class Voice(commands.Cog):
                     raise commands.CommandError(message = "InvalidVoiceChannel")
 
 
-    @music.error
+    @play.error
+    @stop.error
+    @pause.error
     async def join_error(self, ctx, error):
         print(str(error))
         if isinstance(error, commands.CommandError):
