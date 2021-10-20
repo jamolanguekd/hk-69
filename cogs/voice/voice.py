@@ -1,6 +1,8 @@
 import discord
 import asyncio
 import DiscordUtils
+from discord import message
+from discord.ext.commands.core import command
 import helpers.youtube_helper as youtube_helper
 from helpers.date_time_helper import seconds_to_dhm
 from discord.ext import commands
@@ -29,10 +31,15 @@ class Voice(commands.Cog):
               
                 # Parse String Per Page
                 for index, item in enumerate(queue[start:end]):
-                    temp += f"{index+1}.) {item['title']} [{seconds_to_dhm(item['duration'])}]"
-                    if self.current_index == index:
-                        temp += "*<--- Current Track*"
-                    temp += "\n"
+                    if self.current_index == start+index:
+                        temp += "**"
+                    temp += f"{start+index+1}.) {item['title']} [{seconds_to_dhm(item['duration'])}]"
+                    if self.current_index == start+index:
+                        temp += "** *<--- Current Track*"
+                    temp += "\n\n"
+                
+                if end < length:
+                    temp += "...\n\n"
 
                 stringified_queue.append(temp)
 
@@ -85,15 +92,19 @@ class Voice(commands.Cog):
 
     async def get_data(self, keyword):
         loop = self.bot.loop or asyncio.get_running_loop()
-        return await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(keyword))
-    
+        data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(keyword))
+        return data
+        
     def enqueue(self, stream_data):
         self.queue.append(stream_data)
         self.queue_length += 1
     
-    def insert(self, position, stream_data):
+    def shift_right(self, position, stream_data):
         self.queue.insert(position, stream_data)
         self.queue_length += 1
+
+        if self.current_index >= position:
+            self.current_index += 1
 
     @commands.group()
     async def music(self, ctx):
@@ -101,44 +112,96 @@ class Voice(commands.Cog):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
     
-    @music.command()
+    @music.command(aliases = ['playlist', 'view'])
     async def show_queue(self, ctx):
         embeds = self.create_queue_embeds(ctx)
-        paginator = DiscordUtils.Pagination.AutoEmbedPaginator(ctx)
-        await paginator.run(embeds)
+        if(len(embeds) > 1):
+            paginator = DiscordUtils.Pagination.AutoEmbedPaginator(ctx)
+            paginator.current_page = (self.current_index // SONGS_PER_PAGE) + 1
+            await paginator.run(embeds)
+        else:
+            await ctx.send(embed = embeds[0])
 
     @music.command()
     async def play(self, ctx, *, arg=None):
-
         # Voice client should always be present!
         voice_client = ctx.voice_client
 
+        # Playing
         if voice_client.is_playing():
+            
+            # Enqueue new songs and and point to current song
             if arg:
                 await self.add(ctx, args=arg)
+                return
             else:
                 raise commands.CommandError(message = "AlreadyPlaying")     
         
+        # Paused
         elif voice_client.is_paused():
+            # Enqueue and point to new song
             if arg:
-                await self.add(ctx,args=arg)
+                await self.insert(ctx, self.current_index + 1, args=arg, show = False)
+                self.current_index += 1
+                self.current_stream_data = self.queue[self.current_index]
+            
+            # Resume current song
             else:
                 voice_client.resume()
+                msg = self.create_playing_embed(ctx)
+                await ctx.send(embed = msg)
+                return
+        # First Entry
         else:
-            if arg is None:
-                raise commands.MissingRequiredArgument
-         
-            await self.add(ctx, args=arg)
-            self.current_index = self.queue_length - 1
+            # First entry, enqueue and point to new song
+            if arg:
+                await self.add(ctx, args=arg, show = False)
+                self.current_index = self.queue_length - 1
+                self.current_stream_data = self.queue[self.current_index]
+            else:
+                # Reset
+                if self.queue_length:
+                    self.current_index = 0
+                    self.current_stream_data = self.queue[self.current_index]
+                else:
+                    raise commands.CommandError(message = "MissingKeyword")
+            
+        # Play current song pointed
+        stream_url = self.current_stream_data['url']
+        voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
+
+        # Display Queue
+        msg = self.create_playing_embed(ctx)
+        await ctx.send(embed = msg)
+    
+    @music.command(name = "next")
+    async def play_next(self, ctx):
+        voice_client = ctx.voice_client
+        voice_client.pause()
+
+        # There is a next song
+        if self.current_index + 1 < self.queue_length:
+            self.current_index += 1
             self.current_stream_data = self.queue[self.current_index]
-
             stream_url = self.current_stream_data['url']
-            voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e : None)
+            voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e: asyncio.run_coroutine_threadsafe(self.play_next(ctx), self.bot.loop))
 
-        #msg = self.create_playing_embed(ctx)
-        #await ctx.send(embed = msg)
-        await self.show_queue(ctx)
- 
+            msg = self.create_playing_embed(ctx)
+            await ctx.send(embed = msg)
+        
+        # There is no next song
+        else:
+            msg = self.create_end_embed(ctx)
+            await ctx.send(embed = msg)
+    
+    def create_end_embed(self, ctx):
+        msg = discord.Embed()
+        msg.title = ":checkered_flag: No more songs"
+        msg.description = "*You've reached the end of the playlist.*"
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
+
     def create_playing_embed(self, ctx):
         title = self.current_stream_data['title']
         duration = seconds_to_dhm(self.current_stream_data['duration'])
@@ -151,20 +214,55 @@ class Voice(commands.Cog):
         return msg 
 
     @music.command()
-    async def add(self, ctx, *, args = None):
+    async def add(self, ctx, *, args = None, show = True):
         if args is None:
-            raise commands.MissingRequiredArgument
-        
+            raise commands.CommandError(message = "MissingKeyword")
+
         # Add song to queue
-        result_url = youtube_helper.search_first(args)
-        new_stream_data = await self.get_data(result_url)
+        new_stream_data = await self.get_data(args)
         self.enqueue(new_stream_data)
 
-        # Show queue
-        await self.show_queue(ctx)
+        if show:
+            msg = self.create_adding_embed(ctx, new_stream_data)
+            await ctx.send(embed = msg)
 
+    def create_adding_embed(self, ctx, stream_data):
+        title = stream_data['title']
+        duration = seconds_to_dhm(stream_data['duration'])
+
+        msg = discord.Embed()
+        msg.title = ":musical_note: Queued song"
+        msg.description = f"**{title}** `[{duration}]`" 
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
 
     @music.command()
+    async def insert(self, ctx, pos, *, args = None, show = True):
+        if args is None:
+            raise commands.CommandError(message = "MissingKeyword")
+        
+        # Add song to queue
+        new_stream_data = await self.get_data(args)
+        self.shift_right(pos, new_stream_data)
+
+        if show:
+            msg = self.create_inserting_embed(ctx, new_stream_data)
+            await ctx.send(embed = msg)
+
+    
+    def create_inserting_embed(self, ctx, stream_data):
+        title = stream_data['title']
+        duration = seconds_to_dhm(stream_data['duration'])
+
+        msg = discord.Embed()
+        msg.title = ":musical_note: Inserted song"
+        msg.description = f"**{title}** `[{duration}]`" 
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
+
+    @music.command(aliases = ['stop'])
     async def pause(self, ctx):
         voice_client = ctx.voice_client
         if voice_client.is_playing():
@@ -182,27 +280,13 @@ class Voice(commands.Cog):
         msg.description = f"**{title}**" 
         msg.set_footer(text = f"requested by {ctx.message.author}")
         msg.timestamp = ctx.message.created_at
+        
         return msg 
-    
-    @music.command()
-    async def stop(self, ctx):
-        voice_client = ctx.voice_client
-        if not voice_client.is_playing() and not voice_client.is_paused():
-            raise commands.CommandError(message = "AlreadyStopped")
-        voice_client.stop()
-        msg = self.create_stopping_embed(ctx)
-        await ctx.send(embed = msg)
-
-    def create_stopping_embed(self, ctx):
-        msg = discord.Embed()
-        msg.title = ":stop_button: Stopped"
-        msg.description = "The player has been stopped."
-        msg.set_footer(text = f"requested by {ctx.message.author}")
-        msg.timestamp = ctx.message.created_at
-        return msg 
-    
+        
+    @show_queue.before_invoke
+    @add.before_invoke
+    @insert.before_invoke
     @play.before_invoke
-    @stop.before_invoke
     @pause.before_invoke
     async def ensure_voice(self, ctx):
         voice_client = ctx.voice_client
@@ -217,10 +301,13 @@ class Voice(commands.Cog):
                 else:
                     raise commands.CommandError(message = "InvalidVoiceChannel")
 
+    @show_queue.error
+    @add.error
+    @insert.error
     @play.error
-    @stop.error
     @pause.error
     async def join_error(self, ctx, error):
+        command = ctx.command.name
         error_message = str(error)
         print(error_message)
         if isinstance(error, commands.CommandError):
@@ -244,11 +331,18 @@ class Voice(commands.Cog):
                 print("ERROR: Bot has already stopped audio")
                 msg = "Wala naman akong ginagawa :--/"
                 await ctx.reply(msg)
-        elif isinstance(error, commands.MissingRequiredArgument):
-            command = ctx.command.name
-            if command == "play" or command == "add":
-                msg = "Anong i-pplay ko??? :weary:"
+            elif error_message == "AlreadyPlaying":
+                print("ERROR: Bot is already playing")
+                msg = "Naka-play na ako hoy >:("
                 await ctx.reply(msg)
-   
+            elif error_message == "MissingKeyword":
+                print("ERROR: Keyword is missing")
+                msg = "Nawawala ung keyword ;-;"
+                if command == "play":
+                    msg = "Anong i-pplay ko??? :weary:"
+                elif command == "insert" or command == "add":
+                    msg = "Anong i-qqueue ko??? :weary:"
+                await ctx.reply(msg)
+       
 def setup(bot):
     bot.add_cog(Voice(bot))
