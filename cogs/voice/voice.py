@@ -114,17 +114,18 @@ class Voice(commands.Cog):
     @stop.error
     @pause.error
     async def join_error(self, ctx, error):
-        print(str(error))
+        error_message = str(error)
+        print(error_message)
         if isinstance(error, commands.CommandError):
-            if error.message == "NoVoiceChannel":
+            if error_message == "NoVoiceChannel":
                 print(f"ERROR: User {ctx.author} is not connected to a voice channel!")
                 msg = "Wala ka naman sa VC..."
                 await ctx.reply(msg)
-            elif error.message == "PlayerBusy":
+            elif error_message == "PlayerBusy":
                 print(f"ERROR: Bot is currently playing in another voice channel!")
                 msg = f"Busy pa ako. :( Wait ka nalang or sali ka nalang dito: <#{ctx.voice_client.channel.id}>..."
                 await ctx.reply(msg)
-            elif error.message == "InvalidVoiceChannel":
+            elif error_message == "InvalidVoiceChannel":
                 print(f"ERROR: Bot is currently playing in another voice channel!")
                 msg = f"Sabotage ka ghorl? Nasa ibang VC ako..."
                 await ctx.reply(msg)
