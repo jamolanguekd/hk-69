@@ -113,20 +113,20 @@ class Voice(commands.Cog):
 
         if voice_client.is_playing():
             if arg:
-                await self.add(arg)
+                await self.add(ctx, arg)
             else:
                 raise commands.CommandError(message = "AlreadyPlaying")     
         
         elif voice_client.is_paused():
             if arg:
-                await self.add(arg)
+                await self.add(ctx,arg)
             else:
                 voice_client.resume()
         else:
             if arg is None:
                 raise commands.MissingRequiredArgument
          
-            await self.add(arg)
+            await self.add(ctx, arg)
             self.current_index = self.queue_length
 
             stream_url = self.current_stream_data[self.current_index]['url']
