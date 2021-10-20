@@ -8,6 +8,7 @@ from helpers.date_time_helper import seconds_to_dhm
 from discord.ext import commands
 
 PLAYLIST_EMBED_TITLE = ":musical_note: Playlist :musical_note:"
+QUEUE_MAX_SIZE = 50
 SONGS_PER_PAGE = 5
 
 class Voice(commands.Cog):
@@ -282,7 +283,50 @@ class Voice(commands.Cog):
         msg.timestamp = ctx.message.created_at
         
         return msg 
+    
+    @music.command()
+    async def clear(self, ctx):
+        voice_client = ctx.voice_client
+        if(voice_client):
+            voice_client.pause()
         
+        self.current_index = -1
+        self.current_stream_data = None
+        self.queue = []
+        self.queue_length = 0
+
+        if(voice_client):
+            voice_client.stop()
+
+        msg = self.create_clearing_embed(ctx)
+        await ctx.send(embed = msg)
+
+    def create_clearing_embed(self, ctx):
+        msg = discord.Embed()
+        msg.title = ":sparkles: Cleared!"
+        msg.description = "*Playlist has been cleared.*"
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
+
+    @music.command(aliases = ['bbye'])
+    async def evict(self, ctx):
+        voice_client = ctx.voice_client
+        if voice_client:
+            await voice_client.disconnect()
+            msg = self.create_evicting_embed(ctx)
+            await ctx.send(embed = msg)
+        else:
+            raise commands.CommandError(message = "NoBotVoice")
+
+    def create_evicting_embed(self, ctx):
+        msg = discord.Embed()
+        msg.title = ":wave: Goodbye"
+        msg.description = "Pinapaalis na ako :smile:"
+        msg.set_footer(text = f"requested by {ctx.message.author}")
+        msg.timestamp = ctx.message.created_at
+        return msg 
+
     @show_queue.before_invoke
     @add.before_invoke
     @insert.before_invoke
@@ -291,7 +335,7 @@ class Voice(commands.Cog):
     async def ensure_voice(self, ctx):
         voice_client = ctx.voice_client
         if ctx.author.voice is None:
-            raise commands.CommandError(message = "NoVoiceChannel")
+            raise commands.CommandError(message = "NoUserVoice")
         elif voice_client is None:
             await ctx.author.voice.channel.connect()
         elif voice_client.channel != ctx.author.voice.channel:
@@ -311,9 +355,13 @@ class Voice(commands.Cog):
         error_message = str(error)
         print(error_message)
         if isinstance(error, commands.CommandError):
-            if error_message == "NoVoiceChannel":
+            if error_message == "NoUserVoice":
                 print(f"ERROR: User {ctx.author} is not connected to a voice channel!")
                 msg = "Wala ka naman sa VC..."
+                await ctx.reply(msg)
+            elif error_message == "NoBotVoice":
+                print(f"ERROR: Bot is not connected to a voice channel!")
+                msg = "Wala naman ako sa VC..."
                 await ctx.reply(msg)
             elif error_message == "PlayerBusy":
                 print("ERROR: Bot is currently playing in another voice channel!")

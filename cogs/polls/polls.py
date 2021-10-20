@@ -67,7 +67,6 @@ class Polls(commands.Cog):
         choices = list(set(args))
         if(len(choices) < 2):
             raise commands.UserInputError
-        print("test")
         msg = f"Hmmm... let's go with `{random.choice(choices)}` nalang"
         await ctx.message.reply(msg)
 
