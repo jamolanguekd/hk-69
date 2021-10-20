@@ -156,7 +156,8 @@ class Voice(commands.Cog):
             raise commands.MissingRequiredArgument
         
         # Add song to queue
-        new_stream_data = await self.get_data(args)
+        result_url = youtube_helper.search_first(args)
+        new_stream_data = await self.get_data(result_url)
         self.enqueue(new_stream_data)
 
         # Show queue
