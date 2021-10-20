@@ -71,7 +71,7 @@ class Voice(commands.Cog):
 
     def create_queue_embeds(self, ctx):
         embeds = []
-        stringified_queue = self.stringify_queue(SONGS_PER_PAGE)
+        stringified_queue = self.stringify_queue_list(SONGS_PER_PAGE)
         if stringified_queue:
             for string in stringified_queue:
                 embed = self.create_queue_empty_embed(ctx, string)
