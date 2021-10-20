@@ -88,9 +88,8 @@ class Voice(commands.Cog):
 
     async def get_data(self, keyword):
         loop = self.bot.loop or asyncio.get_running_loop()
-        self.current_stream_data = await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(keyword))
-        stream_url = self.current_stream_data['url']
-
+        return await loop.run_in_executor(None, lambda: youtube_helper.get_stream_data(keyword))
+    
     def enqueue(self, stream_data):
         self.queue.append(stream_data)
         self.queue_length += 1
@@ -128,8 +127,9 @@ class Voice(commands.Cog):
          
             await self.add(ctx, args=arg)
             self.current_index = self.queue_length
+            self.current_stream_data = self.queue[self.current_index]
 
-            stream_url = self.current_stream_data[self.current_index]['url']
+            stream_url = self.current_stream_data['url']
             voice_client.play(discord.FFmpegPCMAudio(stream_url, **youtube_helper.FFMPEG_OPTIONS), after = lambda e : None)
 
         #msg = self.create_playing_embed(ctx)
