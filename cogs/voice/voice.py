@@ -1,5 +1,7 @@
 import discord
 import asyncio
+
+from discord import message
 import helpers.youtube_helper as youtube_helper
 from helpers.date_time_helper import seconds_to_dhm
 from discord.ext import commands
@@ -68,14 +70,38 @@ class Voice(commands.Cog):
             voice_client.stop()
     
     @play.before_invoke
+    @stop.before_invoke
+    @pause.before_invoke
     async def ensure_voice(self, ctx):
-        if ctx.voice_client is None:
-            if ctx.author.voice:
-                await ctx.author.voice.channel.connect()
-            else:
-                await ctx.message.reply("Wala ka naman sa VC...")
-        elif ctx.voice_client.is_playing():
-            ctx.voice_client.stop()
+        voice_client = ctx.voice_client
+        if ctx.author.voice is None:
+            raise commands.CommandError(message = "NoVoiceChannel")
+        elif voice_client is None:
+            await ctx.author.voice.channel.connect()
+        elif voice_client.channel != ctx.author.voice.channel:
+            if voice_client.is_playing():
+                if ctx.command.name == 'play':
+                    raise commands.CommandError(message = "PlayerBusy")
+                else:
+                    raise commands.CommandError(message = "InvalidVoiceChannel")
 
+
+    @music.error
+    async def join_error(self, ctx, error):
+        print(str(error))
+        if isinstance(error, commands.CommandError):
+            if error.message == "NoVoiceChannel":
+                print(f"ERROR: User {ctx.author} is not connected to a voice channel!")
+                msg = "Wala ka naman sa VC..."
+                await ctx.reply(msg)
+            elif error.message == "PlayerBusy":
+                print(f"ERROR: Bot is currently playing in another voice channel!")
+                msg = f"Busy pa ako. :( Wait ka nalang or sali ka nalang dito: <#{ctx.voice_client.channel.id}>..."
+                await ctx.reply(msg)
+            elif error.message == "InvalidVoiceChannel":
+                print(f"ERROR: Bot is currently playing in another voice channel!")
+                msg = f"Sabotage ka ghorl? Nasa ibang VC ako..."
+                await ctx.reply(msg)
+   
 def setup(bot):
     bot.add_cog(Voice(bot))
