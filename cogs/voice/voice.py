@@ -56,9 +56,11 @@ class Voice(commands.Cog):
     def create_queue_page_embed(self, ctx, song_list):
         msg = discord.Embed()
         msg.title = PLAYLIST_EMBED_TITLE
-        msg.description += song_list
+        msg.description = song_list
         msg.set_footer(text=f"requested by {ctx.message.author}")
         msg.timestamp = ctx.message.created_at
+
+        return msg
     
     def create_queue_empty_embed(self, ctx):
         msg = discord.Embed()
@@ -79,12 +81,7 @@ class Voice(commands.Cog):
         else:
             embed = self.create_queue_empty_embed(ctx)
             embeds.append(embed)
-        return embeds
-
-    async def show_queue(self, ctx):
-        embeds = self.create_queue_embeds(ctx)
-        paginator = DiscordUtils.Pagination.AutoEmbedPaginator(ctx)
-        paginator.run(embeds)
+        return embeds 
 
     async def get_data(self, keyword):
         loop = self.bot.loop or asyncio.get_running_loop()
@@ -104,6 +101,12 @@ class Voice(commands.Cog):
         if not ctx.invoked_subcommand:
             raise commands.CommandInvokeError
     
+    @music.command()
+    async def show_queue(self, ctx):
+        embeds = self.create_queue_embeds(ctx)
+        paginator = DiscordUtils.Pagination.AutoEmbedPaginator(ctx)
+        await paginator.run(embeds)
+
     @music.command()
     async def play(self, ctx, *, arg=None):
 
@@ -126,7 +129,7 @@ class Voice(commands.Cog):
                 raise commands.MissingRequiredArgument
          
             await self.add(ctx, args=arg)
-            self.current_index = self.queue_length
+            self.current_index = self.queue_length - 1
             self.current_stream_data = self.queue[self.current_index]
 
             stream_url = self.current_stream_data['url']
