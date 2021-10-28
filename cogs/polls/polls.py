@@ -143,7 +143,7 @@ class Polls(commands.Cog):
 
             percentage = {}
             for choice in choices:
-                percentage[choice] = round((count[choice] / attempts) * 100, 2)
+                percentage[choice] = round((count[choice] / total_attempts) * 100, 2)
             
             msg = self.create_choose_embed(ctx, winning_pick=winning_pick, repeat=True, tiebreaker = tiebreaker, attempts = total_attempts, count = count, percentages = percentage)
             await ctx.message.reply(embed = msg)
