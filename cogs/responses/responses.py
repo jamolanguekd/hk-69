@@ -175,7 +175,7 @@ class Responses(commands.Cog):
                 msg.description += "\n"
             msg.description += f"The following words cannot be removed:\n*{', '.join(thrown)}*\n"
         msg.set_footer(text = f"updated by {ctx.message.author}")
-        msg.timestamp = date_time_helper.get_current_timestamp()
+        msg.timestamp = ctx.message.created_at
         return msg
         
     @remove.command(name="curse")

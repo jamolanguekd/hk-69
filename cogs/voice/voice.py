@@ -19,6 +19,7 @@ class Voice(commands.Cog):
         self.current_index = -1
         self.queue_length = 0
         self.current_stream_data = None
+        self.loop = True
 
     def stringify_queue_list(self, limit):
         queue = self.queue
