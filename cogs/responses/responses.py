@@ -206,6 +206,9 @@ class Responses(commands.Cog):
         print("Curse vocabulary was successfully updated!")
 
     async def detect_curses(self, msg):
+        return if("hkhk" in msg.channel.name)
+        return if (hasattr(msg.channel, 'parent') and "hkhk" in msg.channel.parent.name)
+        
         response = ""
         checklist = get_global_vocabulary(self.curse_vocab).union(get_server_vocabulary(self.curse_vocab, msg))
         for word in checklist:
